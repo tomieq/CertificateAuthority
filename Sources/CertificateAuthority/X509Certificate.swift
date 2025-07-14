@@ -7,7 +7,7 @@
 import Foundation
 import SwiftyTLV
 import CryptoKeyUtils
-import CryptoKit
+import Crypto
 
 public enum X509CertificateError: Error {
     case invalidFormat

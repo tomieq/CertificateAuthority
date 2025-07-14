@@ -66,10 +66,11 @@ struct CertificateAuthorityTests {
         #expect(unchangablePart == expected)
         
         let certificatePath = FileManager.default.currentDirectoryPath + "/\(UUID().uuidString).pem"
+        let certificateURL = URL(fileURLWithPath: certificatePath)
         defer {
-            try? FileManager.default.removeItem(atPath: certificatePath)
+            try? FileManager.default.removeItem(at: certificateURL)
         }
-        try certificate.pem(issuerKey: rootPrivKey).data(using: .utf8)?.write(to: URL(fileURLWithPath: certificatePath))
+        try certificate.pem(issuerKey: rootPrivKey).data(using: .utf8)?.write(to: certificateURL)
         
         let result = Shell().exec("openssl verify -CAfile \(certificatePath) \(certificatePath)")
         #expect(result.contains("OK"))

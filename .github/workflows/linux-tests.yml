@@ -1,0 +1,12 @@
+name: Test Linux Platform
+on: [push]
+
+jobs:
+  Test-Linux-Swift-6_0:
+    runs-on: ubuntu-latest
+    container:
+      image: swift:6.0
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Unit Tests
+        run: swift test
