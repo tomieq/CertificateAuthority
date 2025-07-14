@@ -11,7 +11,6 @@ public enum BasicConstraintsError: Error {
     case invalidIdentifier
     case missingIsCritical
     case missingCertificateAuthorityData
-    case missingIsCertificateAuthority
 }
 
 public struct BasicConstraints: X509Extension {
@@ -39,12 +38,15 @@ public struct BasicConstraints: X509Extension {
             throw BasicConstraintsError.missingCertificateAuthorityData
         }
         let caElements = try ASN1(data: octetString).children
-        guard case .boolean(let isCertificateAuthority) = caElements[safeIndex: 0] else {
-            throw BasicConstraintsError.missingIsCertificateAuthority
+        var section = 0
+        if case .boolean(let isCertificateAuthority) = caElements[safeIndex: section] {
+            self.isCertificateAuthority = isCertificateAuthority
+            section.increment()
+        } else {
+            self.isCertificateAuthority = false
         }
-        self.isCertificateAuthority = isCertificateAuthority
         
-        if case .integer(let data) = caElements[safeIndex: 1] {
+        if case .integer(let data) = caElements[safeIndex: section] {
             self.amountOfChildCAs = try data.uInt8
         } else {
             self.amountOfChildCAs = nil
@@ -55,9 +57,11 @@ public struct BasicConstraints: X509Extension {
 extension BasicConstraints {
     public var asn1: ASN1 {
         get throws {
-            var content: [ASN1] = [
-                .boolean(isCertificateAuthority)
-            ]
+            var content: [ASN1] = []
+            
+            if isCertificateAuthority {
+                content.append(.boolean(isCertificateAuthority))
+            }
             if let amountOfChildCAs = amountOfChildCAs {
                 content.append(.integer(amountOfChildCAs.data))
             }
