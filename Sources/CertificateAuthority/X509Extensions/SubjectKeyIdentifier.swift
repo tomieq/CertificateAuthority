@@ -8,7 +8,7 @@ import Foundation
 import SwiftyTLV
 
 public enum SubjectKeyIdentifierError: Error {
-    case invalidIdentifier
+    case invalidFormat
     case missingKeyID
 }
 
@@ -22,18 +22,13 @@ public struct SubjectKeyIdentifier: X509Extension {
     }
     
     public init(asn1: ASN1) throws {
-        let elements = asn1.children
-        guard case .objectIdentifier(X509ExtensionType.subjectKeyIdentifier.rawValue) = elements[safeIndex: 0] else {
-            throw SubjectKeyIdentifierError.invalidIdentifier
+        let envelope = try X509ExtensionEnvelope(asn1: asn1)
+        self.isCritical = envelope.isCritical
+        
+        guard let container = try? ASN1(data: envelope.body) else {
+            throw SubjectKeyIdentifierError.invalidFormat
         }
-        var index = 1
-        if case .boolean(let isCritical) = elements[safeIndex: index] {
-            index.increment()
-            self.isCritical = isCritical
-        } else {
-            self.isCritical = false
-        }
-        guard case .octetString(let keyContainer) = elements[safeIndex: index], let keyASN = try? ASN1(data: keyContainer), case .octetString(let keyID) = keyASN else {
+        guard case .octetString(let keyID) = container else {
             throw SubjectKeyIdentifierError.missingKeyID
         }
         self.keyID = keyID
@@ -43,12 +38,9 @@ public struct SubjectKeyIdentifier: X509Extension {
 extension SubjectKeyIdentifier {
     public var asn1: ASN1 {
         get throws {
-            var content: [ASN1] = [
-                .objectIdentifier(X509ExtensionType.subjectKeyIdentifier.rawValue)
-            ]
-            if isCritical { content.append(.boolean(isCritical)) }
-            content.append(.octetString(try ASN1.octetString(keyID).data))
-            return ASN1.sequence(content)
+            try X509ExtensionEnvelope(type: .subjectKeyIdentifier,
+                                      isCritical: isCritical,
+                                      body: .octetString(keyID)).asn1
         }
     }
 }

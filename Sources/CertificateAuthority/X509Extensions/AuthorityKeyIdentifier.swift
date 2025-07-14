@@ -29,26 +29,14 @@ public struct AuthorityKeyIdentifier: X509Extension {
     }
     
     public init(asn1: ASN1) throws {
-        let elements = asn1.children
-        guard case .objectIdentifier(X509ExtensionType.authorityKeyIdentifier.rawValue) = elements[safeIndex: 0] else {
-            throw AuthorityKeyIdentifierError.invalidIdentifier
-        }
-        var index = 1
-        if case .boolean(let isCritical) = elements[safeIndex: index] {
-            index.increment()
-            self.isCritical = isCritical
-        } else {
-            self.isCritical = false
-        }
-        guard case .octetString(let details) = elements[safeIndex: index] else {
-            throw AuthorityKeyIdentifierError.missingDetails
-        }
+        let envelope = try X509ExtensionEnvelope(asn1: asn1)
+        self.isCritical = envelope.isCritical
         
-        let content = try ASN1(data: details).children
+        let sections = try ASN1(data: envelope.body).children
 
         // keyID
         var section = 0
-        if case .contextSpecificPrimitive(let customTLV) = content[safeIndex: section] , case .customTlv(let tlv) = customTLV {
+        if case .contextSpecificPrimitive(let customTLV) = sections[safeIndex: section] , case .customTlv(let tlv) = customTLV {
             section.increment()
             self.issuerKeyID = tlv.value
         } else {
@@ -56,7 +44,7 @@ public struct AuthorityKeyIdentifier: X509Extension {
         }
         
         // issuer
-        if case .contextSpecificConstructed(tag: 1, let container) = content[safeIndex: section], case .contextSpecificConstructed(tag: 4, let sequence) = container.first, let issuerASN1 = sequence.first?.children {
+        if case .contextSpecificConstructed(tag: 1, let container) = sections[safeIndex: section], case .contextSpecificConstructed(tag: 4, let sequence) = container.first, let issuerASN1 = sequence.first?.children {
             self.issuer = X509Entity(asn: issuerASN1)
             section.increment()
         } else {
@@ -64,7 +52,7 @@ public struct AuthorityKeyIdentifier: X509Extension {
         }
 
         // serial number
-        if case .contextSpecificPrimitive(let container) = content[safeIndex: section], case .integer(let serialNumber) = container {
+        if case .contextSpecificPrimitive(let container) = sections[safeIndex: section], case .integer(let serialNumber) = container {
             self.issuerSerialNumber = serialNumber
         } else {
             self.issuerSerialNumber = nil
@@ -76,27 +64,21 @@ public struct AuthorityKeyIdentifier: X509Extension {
 extension AuthorityKeyIdentifier {
     public var asn1: ASN1 {
         get throws {
-            var content: [ASN1] = [ .objectIdentifier(X509ExtensionType.authorityKeyIdentifier.rawValue) ]
-            if isCritical { content.append(.boolean(isCritical)) }
-            
-            var issuerContent: [ASN1] = []
+            var content = ASN1.sequence([])
             if let issuerKeyID {
-                issuerContent.append(.contextSpecificPrimitive(.customTlv(BerTlv(tag: 0.data, value: issuerKeyID))))
+                try content.append(.contextSpecificPrimitive(.customTlv(BerTlv(tag: 0.data, value: issuerKeyID))))
             }
-            
             if let issuer {
-                issuerContent.append(.contextSpecificConstructed(tag: 1, [
+                try content.append(.contextSpecificConstructed(tag: 1, [
                     .contextSpecificConstructed(tag: 4, [.sequence(issuer.asn1)])
                 ]))
             }
             if let issuerSerialNumber {
-                issuerContent.append(.contextSpecificPrimitive(.integer(issuerSerialNumber)))
+                try content.append(.contextSpecificPrimitive(.integer(issuerSerialNumber)))
             }
-            
-            // all are optional
-            let issuerInfo = ASN1.sequence(issuerContent)
-            content.append(.octetString(try issuerInfo.data))
-            return ASN1.sequence(content)
+            return try X509ExtensionEnvelope(type: .authorityKeyIdentifier,
+                                             isCritical: isCritical,
+                                             body: content).asn1
         }
     }
 }
