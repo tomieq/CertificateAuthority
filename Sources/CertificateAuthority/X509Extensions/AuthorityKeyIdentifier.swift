@@ -11,18 +11,17 @@ import SwiftyTLV
 public enum AuthorityKeyIdentifierError: Error {
     case invalidIdentifier
     case missingDetails
-    case missingKeyID
-    case missingIssuer
-    case missingIssuerSerialNumber
 }
 
+// all parameteres are optional, you can provide whichever you want
+// if you don't want to provide any parameter, just do not add this extension to the certificate
 public struct AuthorityKeyIdentifier: X509Extension {
     public let isCritical: Bool
-    public let issuerKeyID: Data
-    public let issuerSerialNumber: Data
-    public let issuer: X509Entity
+    public let issuerKeyID: Data?
+    public let issuerSerialNumber: Data?
+    public let issuer: X509Entity?
     
-    public init(isCritical: Bool = false, issuerKeyID: Data, issuerSerialNumber: Data, issuer: X509Entity) {
+    public init(isCritical: Bool = false, issuerKeyID: Data?, issuerSerialNumber: Data?, issuer: X509Entity?) {
         self.isCritical = isCritical
         self.issuerKeyID = issuerKeyID
         self.issuerSerialNumber = issuerSerialNumber
@@ -46,40 +45,56 @@ public struct AuthorityKeyIdentifier: X509Extension {
         }
         
         let content = try ASN1(data: details).children
+
         // keyID
-        guard case .contextSpecificPrimitive(let customTLV) = content[safeIndex: 0] , case .customTlv(let tlv) = customTLV else {
-            throw AuthorityKeyIdentifierError.missingKeyID
+        var section = 0
+        if case .contextSpecificPrimitive(let customTLV) = content[safeIndex: section] , case .customTlv(let tlv) = customTLV {
+            section.increment()
+            self.issuerKeyID = tlv.value
+        } else {
+            self.issuerKeyID = nil
         }
-        self.issuerKeyID = tlv.value
         
-        guard case .contextSpecificConstructed(tag: 1, let container) = content[safeIndex: 1], case .contextSpecificConstructed(tag: 4, let sequence) = container.first, let issuerASN1 = sequence.first?.children else {
-            throw AuthorityKeyIdentifierError.missingIssuer
+        // issuer
+        if case .contextSpecificConstructed(tag: 1, let container) = content[safeIndex: section], case .contextSpecificConstructed(tag: 4, let sequence) = container.first, let issuerASN1 = sequence.first?.children {
+            self.issuer = X509Entity(asn: issuerASN1)
+            section.increment()
+        } else {
+            self.issuer = nil
         }
-        self.issuer = X509Entity(asn: issuerASN1)
+
+        // serial number
+        if case .contextSpecificPrimitive(let container) = content[safeIndex: section], case .integer(let serialNumber) = container {
+            self.issuerSerialNumber = serialNumber
+        } else {
+            self.issuerSerialNumber = nil
+        }
         
-        guard case .contextSpecificPrimitive(let container) = content[safeIndex: 2], case .integer(let serialNumber) = container else {
-            throw AuthorityKeyIdentifierError.missingIssuerSerialNumber
-        }
-        self.issuerSerialNumber = serialNumber
     }
 }
 
 extension AuthorityKeyIdentifier {
     public var asn1: ASN1 {
         get throws {
-            var content: [ASN1] = [
-                .objectIdentifier(X509ExtensionType.authorityKeyIdentifier.rawValue)
-            ]
+            var content: [ASN1] = [ .objectIdentifier(X509ExtensionType.authorityKeyIdentifier.rawValue) ]
             if isCritical { content.append(.boolean(isCritical)) }
             
-            // all are optional
-            let issuerInfo = ASN1.sequence([
-                .contextSpecificPrimitive(.customTlv(BerTlv(tag: 0.data, value: issuerKeyID))),
-                .contextSpecificConstructed(tag: 1, [
+            var issuerContent: [ASN1] = []
+            if let issuerKeyID {
+                issuerContent.append(.contextSpecificPrimitive(.customTlv(BerTlv(tag: 0.data, value: issuerKeyID))))
+            }
+            
+            if let issuer {
+                issuerContent.append(.contextSpecificConstructed(tag: 1, [
                     .contextSpecificConstructed(tag: 4, [.sequence(issuer.asn1)])
-                ]),
-                .contextSpecificPrimitive(.integer(issuerSerialNumber))
-            ])
+                ]))
+            }
+            if let issuerSerialNumber {
+                issuerContent.append(.contextSpecificPrimitive(.integer(issuerSerialNumber)))
+            }
+            
+            // all are optional
+            let issuerInfo = ASN1.sequence(issuerContent)
             content.append(.octetString(try issuerInfo.data))
             return ASN1.sequence(content)
         }
