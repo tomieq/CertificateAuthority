@@ -52,15 +52,11 @@ extension X509Entity {
         for row in rows {
             if case .set(let set) = row, case .sequence(let pair) = set.first {
                 if case .objectIdentifier(let oid) = pair.first, let code = X509EntityElement(rawValue: oid) {
-                    switch code {
-                    case .countryCode:
-                        if case .printableString(let countryCode) = pair[safeIndex: 1] {
-                            self[.countryCode] = countryCode
-                        }
+                    switch pair[safeIndex: 1] {
+                    case .printableString(let value), .utf8String(let value):
+                        self[code] = value
                     default:
-                        if case .utf8String(let value) = pair[safeIndex: 1] {
-                            self[code] = value
-                        }
+                        break
                     }
                 }
             }
@@ -75,7 +71,7 @@ public extension X509Entity {
             rows.append(.set([
                 .sequence([
                     .objectIdentifier(key.rawValue),
-                    key == .countryCode ? .printableString(value) :  .utf8String(value)
+                    .printableString(value)
                 ])
             ]))
         }
