@@ -43,6 +43,19 @@ public struct X509Certificate {
         self.extensions = extensions
     }
     
+    public init(der: Data) throws {
+        try self.init(asn1: try ASN1(data: der))
+    }
+    
+    public init(pem: String) throws {
+        let rawPem = pem
+            .removed(text: Self.pemHeader)
+            .removed(text: Self.pemFooter)
+            .removed(text: "\n")
+            .removed(text: "\r")
+        try self.init(der: Base64Decoder.data(base64: rawPem))
+    }
+    
     public init(asn1 asn: ASN1) throws {
         let container = asn.children
         
@@ -107,8 +120,8 @@ public extension X509Certificate {
     }
     
     
-    static let pemHeader = "-----BEGIN CERTIFICATE-----\n"
-    static let pemFooter = "\n-----END CERTIFICATE-----"
+    static let pemHeader = "-----BEGIN CERTIFICATE-----"
+    static let pemFooter = "-----END CERTIFICATE-----"
     
     func der(issuerKey: ECPrivateKey) throws -> Data {
         try asn1(issuerKey: issuerKey).data
@@ -116,6 +129,6 @@ public extension X509Certificate {
     
     func pem(issuerKey: ECPrivateKey) throws -> String {
         let base64Key = try der(issuerKey: issuerKey).base64EncodedString(options: .lineLength64Characters)
-        return Self.pemHeader + base64Key + Self.pemFooter
+        return Self.pemHeader + "\n" + base64Key + "\n" + Self.pemFooter
     }
 }
