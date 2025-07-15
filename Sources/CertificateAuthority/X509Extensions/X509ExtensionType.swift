@@ -8,6 +8,7 @@
 enum X509ExtensionType: String {
     case basicConstraints = "2.5.29.19"
     case subjectKeyIdentifier = "2.5.29.14"
+    case keyUsage = "2.5.29.15"
     case authorityKeyIdentifier = "2.5.29.35"
 }
 
@@ -20,6 +21,8 @@ extension X509ExtensionType {
             SubjectKeyIdentifier.self
         case .authorityKeyIdentifier:
             AuthorityKeyIdentifier.self
+        case .keyUsage:
+            KeyUsage.self
         }
     }
 }

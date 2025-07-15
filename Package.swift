@@ -15,7 +15,7 @@ let package = Package(
             targets: ["CertificateAuthority"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/tomieq/SwiftExtensions", .upToNextMajor(from: "1.3.0")),
+        .package(url: "https://github.com/tomieq/SwiftExtensions", branch: "master"),
         .package(url: "https://github.com/tomieq/SwiftyTLV", branch: "master"),
         .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "3.12.3")),
         .package(url: "https://github.com/tomieq/CryptoKeyUtils", branch: "master")
