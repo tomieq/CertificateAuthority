@@ -9,9 +9,9 @@ import SwiftyTLV
 
 
 
-public struct X509Validity {
-    public let from: Date
-    public let to: Date
+public class X509Validity {
+    public var from: Date
+    public var to: Date
     
     public init(from: Date, to: Date) {
         self.from = from
@@ -25,15 +25,14 @@ public enum X509ValidityError: Error {
 }
 
 extension X509Validity {
-    init(asn pair: [ASN1]) throws {
+    convenience init(asn pair: [ASN1]) throws {
         guard case .utcTime(let from) = pair[safeIndex: 0] else {
             throw X509ValidityError.missingFromTime
         }
-        self.from = from
         guard case .utcTime(let to) = pair[safeIndex: 1] else {
             throw X509ValidityError.missingToTime
         }
-        self.to = to
+        self.init(from: from, to: to)
     }
 }
 

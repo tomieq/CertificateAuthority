@@ -20,13 +20,13 @@ public enum X509CertificateError: Error {
     case missingExtensions
 }
 
-public struct X509Certificate {
+public class X509Certificate {
     public let serialNumber: Data
-    public let issuer: X509Entity
-    public let validity: X509Validity
-    public let subject: X509Entity
-    public let publicKey: ECPublicKey
-    public let extensions: [X509Extension]
+    public var issuer: X509Entity
+    public var validity: X509Validity
+    public var subject: X509Entity
+    public var publicKey: ECPublicKey
+    public var extensions: [X509Extension]
     
     public init (serialNumber: Data,
           issuer: X509Entity,
@@ -43,11 +43,11 @@ public struct X509Certificate {
         self.extensions = extensions
     }
     
-    public init(der: Data) throws {
+    public convenience init(der: Data) throws {
         try self.init(asn1: try ASN1(data: der))
     }
     
-    public init(pem: String) throws {
+    public convenience init(pem: String) throws {
         let rawPem = pem
             .removed(text: Self.pemHeader)
             .removed(text: Self.pemFooter)

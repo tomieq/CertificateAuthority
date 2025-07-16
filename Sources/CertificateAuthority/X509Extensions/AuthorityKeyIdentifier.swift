@@ -16,6 +16,7 @@ public enum AuthorityKeyIdentifierError: Error {
 // all parameteres are optional, you can provide whichever you want
 // if you don't want to provide any parameter, just do not add this extension to the certificate
 public struct AuthorityKeyIdentifier: X509Extension {
+    public let type: X509ExtensionType = .authorityKeyIdentifier
     public let isCritical: Bool
     public let issuerKeyID: Data?
     public let issuerSerialNumber: Data?

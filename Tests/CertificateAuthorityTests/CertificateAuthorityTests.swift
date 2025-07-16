@@ -76,5 +76,40 @@ struct CertificateAuthorityTests {
         #expect(result.contains("OK"))
     }
     
+    @Test func extensionHelpers() throws {
+        let privateKey = try self.privateKey
+        let serialNumber = Data(repeating: 0xA0, count: 12)
+        let cert = X509Certificate(serialNumber: serialNumber,
+                                   issuer: issuer,
+                                   validity: X509Validity(from: Date(), to: Date().addingTimeInterval(300)),
+                                   subject: issuer,
+                                   publicKey: privateKey.publicKey)
+        let keyID = Data(repeating: 7, count: 18)
+        cert.configure(basicConstraints: BasicConstraints(isCertificateAuthority: true, amountOfChildCAs: 0))
+        cert.alternativeNames = ["domain.com"]
+        cert.keyUsage = [.digitalSignature, .keyCertSign]
+        cert.extendedKeyUsage = [.serverAuth, .clientAuth]
+        cert.subjectKeyIdentifier = keyID
+        cert.configure(authorityKeyIdentifier: AuthorityKeyIdentifier(issuerKeyID: keyID,
+                                                                      issuerSerialNumber: serialNumber,
+                                                                      issuer: issuer))
+        
+    }
 }
 
+extension CertificateAuthorityTests {
+    var issuer: X509Entity {
+        X509Entity(countryName: "PL",
+                   stateOrProvinceName: "Lodzkie",
+                   city: "Lodz",
+                   organizationName: "Mega Corporation",
+                   organizationalUnitName: "Mega Ceritficates Department",
+                   commonName: "Root R1")
+    }
+    
+    var privateKey: ECPrivateKey {
+        get throws {
+            try ECPrivateKey(der: P256.Signing.PrivateKey().derRepresentation)
+        }
+    }
+}

@@ -13,18 +13,19 @@ public enum BasicConstraintsError: Error {
     case missingCertificateAuthorityData
 }
 
-public struct BasicConstraints: X509Extension {
+public class BasicConstraints: X509Extension {
+    public let type: X509ExtensionType = .basicConstraints
     public let isCritical: Bool
-    public let isCertificateAuthority: Bool
-    public let amountOfChildCAs: UInt8?
+    public var isCertificateAuthority: Bool
+    public var amountOfChildCAs: UInt8?
     
-    public init(isCritical: Bool, isCertificateAuthority: Bool, amountOfChildCAs: UInt8? = nil) {
+    public init(isCritical: Bool = true, isCertificateAuthority: Bool, amountOfChildCAs: UInt8? = nil) {
         self.isCritical = isCritical
         self.isCertificateAuthority = isCertificateAuthority
         self.amountOfChildCAs = amountOfChildCAs
     }
     
-    public init(asn1: ASN1) throws {
+    required public init(asn1: ASN1) throws {
         let envelope = try X509ExtensionEnvelope(asn1: asn1)
         self.isCritical = envelope.isCritical
         

@@ -12,16 +12,17 @@ public enum SubjectKeyIdentifierError: Error {
     case missingKeyID
 }
 
-public struct SubjectKeyIdentifier: X509Extension {
+public class SubjectKeyIdentifier: X509Extension {
+    public let type: X509ExtensionType = .subjectKeyIdentifier
     public let isCritical: Bool
-    public let keyID: Data
+    public var keyID: Data
     
     public init(isCritical: Bool = false, keyID: Data) {
         self.isCritical = isCritical
         self.keyID = keyID
     }
     
-    public init(asn1: ASN1) throws {
+    required public init(asn1: ASN1) throws {
         let envelope = try X509ExtensionEnvelope(asn1: asn1)
         self.isCritical = envelope.isCritical
         

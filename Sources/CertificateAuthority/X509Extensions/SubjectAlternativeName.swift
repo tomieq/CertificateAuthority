@@ -8,16 +8,17 @@
 import SwiftyTLV
 import SwiftExtensions
 
-public struct SubjectAlternativeName: X509Extension {
+public class SubjectAlternativeName: X509Extension {
+    public let type: X509ExtensionType = .subjectAlternativeName
     public let isCritical: Bool
-    public let names: [String]
+    public var names: [String]
     
-    public init(isCritical: Bool, names: [String]) {
+    public init(isCritical: Bool = false, names: [String]) {
         self.isCritical = isCritical
         self.names = names
     }
     
-    public init(asn1: ASN1) throws {
+    required public init(asn1: ASN1) throws {
         let envelope = try X509ExtensionEnvelope(asn1: asn1)
         self.isCritical = envelope.isCritical
         

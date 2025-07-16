@@ -26,16 +26,17 @@ public enum KeyUsageError: Error {
     case missingUsageData
 }
 
-public struct KeyUsage: X509Extension {
+public class KeyUsage: X509Extension {
+    public let type: X509ExtensionType = .keyUsage
     public let isCritical: Bool
-    public let purpose: [KeyUsagePurpose]
+    public var purpose: [KeyUsagePurpose]
     
     public init(isCritical: Bool = false, purpose: [KeyUsagePurpose]) {
         self.isCritical = isCritical
         self.purpose = purpose
     }
     
-    public init(asn1: ASN1) throws {
+    required public init(asn1: ASN1) throws {
         let envelope = try X509ExtensionEnvelope(asn1: asn1)
         self.isCritical = envelope.isCritical
         

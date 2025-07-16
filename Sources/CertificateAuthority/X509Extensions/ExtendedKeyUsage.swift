@@ -27,16 +27,17 @@ public enum ExtendedKeyUsageError: Error {
     case invalidFormat
 }
 
-public struct ExtendedKeyUsage: X509Extension {
+public class ExtendedKeyUsage: X509Extension {
+    public let type: X509ExtensionType = .extendedKeyUsage
     public let isCritical: Bool
-    public let purposes: [ExtendedKeyUsagePurpose]
+    public var purposes: [ExtendedKeyUsagePurpose]
     
     public init(isCritical: Bool = false, purposes: [ExtendedKeyUsagePurpose]) {
         self.isCritical = isCritical
         self.purposes = purposes
     }
     
-    public init(asn1: ASN1) throws {
+    required public init(asn1: ASN1) throws {
         let envelope = try X509ExtensionEnvelope(asn1: asn1)
         self.isCritical = envelope.isCritical
         

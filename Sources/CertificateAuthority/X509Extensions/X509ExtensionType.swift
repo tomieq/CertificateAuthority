@@ -5,7 +5,7 @@
 //  Created by Tomasz Kucharski on 12/07/2025.
 //
 
-enum X509ExtensionType: String {
+public enum X509ExtensionType: String {
     case basicConstraints = "2.5.29.19"
     case subjectKeyIdentifier = "2.5.29.14"
     case keyUsage = "2.5.29.15"
