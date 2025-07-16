@@ -25,7 +25,6 @@ public enum ExtendedKeyUsagePurpose: String {
 
 public enum ExtendedKeyUsageError: Error {
     case invalidFormat
-    case missingUsageData
 }
 
 public struct ExtendedKeyUsage: X509Extension {
@@ -42,7 +41,7 @@ public struct ExtendedKeyUsage: X509Extension {
         self.isCritical = envelope.isCritical
         
         guard let container = try? ASN1(data: envelope.body) else {
-            throw KeyUsageError.invalidFormat
+            throw ExtendedKeyUsageError.invalidFormat
         }
         purposes = container.children.compactMap {
             guard case .objectIdentifier(let oid) = $0 else { return nil }
