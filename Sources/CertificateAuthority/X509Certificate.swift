@@ -86,13 +86,14 @@ public class X509Certificate {
         }
         self.publicKey = try ECPublicKey(der: try ASN1.sequence(publicKeyRows).data)
         
-        guard case .contextSpecificConstructed(3, let extensionContainer) = certificate[safeIndex: X509Section.extensions.rawValue] else {
-            throw X509CertificateError.missingExtensions
+        if case .contextSpecificConstructed(3, let extensionContainer) = certificate[safeIndex: X509Section.extensions.rawValue] {
+            self.extensions = try extensionContainer.first?.children.compactMap { sequence -> X509Extension? in
+                guard case .objectIdentifier(let oid) = sequence.child(at: 0) else { return nil }
+                return try X509ExtensionType(rawValue: oid)?.x509Extension.init(asn1: sequence)
+            } ?? []
+        } else {
+            self.extensions = []
         }
-        self.extensions = try extensionContainer.first?.children.compactMap { sequence -> X509Extension? in
-            guard case .objectIdentifier(let oid) = sequence.child(at: 0) else { return nil }
-            return try X509ExtensionType(rawValue: oid)?.x509Extension.init(asn1: sequence)
-        } ?? []
     }
 }
 
