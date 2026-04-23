@@ -94,7 +94,100 @@ struct CertificateAuthorityTests {
                                                                       issuerSerialNumber: serialNumber,
                                                                       issuer: issuer))
         
+        try cert.pem(issuerKey: privateKey).data(using: .utf8)?
+            .write(to: URL(filePath: "/Users/tomaskuc/Downloads/intermediate_rebuild.pem"))
+        let result = Shell().exec("openssl verify -CAfile /Users/tomaskuc/Downloads/intermediate_rebuild.pem /Users/tomaskuc/Downloads/intermediate_rebuild.pem")
+        #expect(result.contains("OK"))
     }
+    
+    @Test func experiment() throws {
+        let privateKey = P256.Signing.PrivateKey()
+        let rootPrivKey = try ECPrivateKey(der: privateKey.derRepresentation)
+        let issuer = X509Entity(countryName: "PL",
+                                stateOrProvinceName: "Lodzkie",
+                                city: "Lodz",
+                                organizationName: "Mega Corporation",
+                                organizationalUnitName: "Mega Ceritficates Department",
+                                commonName: "Root R1")
+        
+        let validFrom = "2025-04-14T10:44:00+0000"
+        let validTo = "2035-04-14T10:44:00+0000"
+        let dateFormatter = ISO8601DateFormatter()
+        
+        let certificateKeyID = Data(repeating: 0x87, count: 20)
+        let serialNumber = Data(hexString: "00F839A788D633C6BB")
+        let certificate = X509Certificate(serialNumber: serialNumber,
+                                          issuer: issuer,
+                                          validity: X509Validity(from: dateFormatter.date(from:validFrom)!, to: dateFormatter.date(from:validTo)!),
+                                          subject: issuer,
+                                          publicKey: rootPrivKey.publicKey,
+                                          extensions: [
+                                            BasicConstraints(isCritical: true, isCertificateAuthority: true, amountOfChildCAs: 1),
+                                            SubjectKeyIdentifier(keyID: certificateKeyID),
+                                            AuthorityKeyIdentifier(issuerKeyID: nil,
+                                                                   issuerSerialNumber: nil,
+                                                                   issuer: issuer)
+                                          ])
+        
+        let certificatePath = FileManager.default.currentDirectoryPath + "/\(UUID().uuidString).pem"
+        let certificateURL = URL(fileURLWithPath: certificatePath)
+        defer { try? FileManager.default.removeItem(at: certificateURL) }
+        
+        try certificate.pem(issuerKey: rootPrivKey).data(using: .utf8)?.write(to: certificateURL)
+        let result = Shell().exec("openssl verify -CAfile \(certificatePath) \(certificatePath)")
+        #expect(result.contains("OK"))
+    }
+    
+    @Test func gitHub() throws {
+        let privateKey = try self.privateKey
+        let pem = try String(contentsOf: URL(filePath: "/Users/tomaskuc/Downloads/github.com.pem"), encoding: .utf8)
+//        let pem = try String(contentsOf: URL(filePath: "/Users/tomaskuc/Downloads/intermediate.pem"), encoding: .utf8)
+        let cert = try X509Certificate(pem: pem)
+//        cert.publicKey = privateKey.publicKey
+//        cert.subject = issuer
+//        cert.issuer = issuer
+        cert.alternativeNames = ["domain.com"]
+        cert.keyUsage = [.digitalSignature, .keyEncipherment]
+        cert.extendedKeyUsage = [.codeSigning]
+//        cert.setup(isCA: true, pathLen: 3)
+        cert.configure(basicConstraints: BasicConstraints(isCertificateAuthority: true, amountOfChildCAs: 10))
+        cert.subjectKeyIdentifier = Data([0x01, 0x02, 0x03])
+        
+        let basic: BasicConstraints? = cert.getExtension()
+        print(basic?.isCertificateAuthority ?? false)
+//        let der = try Data(contentsOf: URL(filePath: "/Users/tomaskuc/dev/PKIEngine.swift/root_cert.der"))
+//        let cert = try X509Certificate(der: der)
+//        try cert.der(issuerKey: privateKey)
+//            .write(to: URL(filePath: "/Users/tomaskuc/Downloads/intermediate_rebuild.pem"))
+        try cert.pem(issuerKey: privateKey).data(using: .utf8)?
+            .write(to: URL(filePath: "/Users/tomaskuc/Downloads/intermediate_rebuild.pem"))
+    }
+    
+    @Test func ccc() throws {
+        let pem = """
+            -----BEGIN CERTIFICATE-----
+            MIIBSzCB8qADAgECAgR/8JFNMAoGCCqGSM49BAMCMC4xLDAqBgNVBAMMI2ZlY2lfd2FsbGV0
+            X2RldmljZTJ3bXNfandlXzAwMDAwMDAxMB4XDTI1MDgxODIxMDAwMFoXDTI4MDgxOTIwNTk1
+            OVowLjEsMCoGA1UEAwwjZmVjaV93YWxsZXRfZGV2aWNlMndtc19qd2VfMDAwMDAwMDEwWTAT
+            BgcqhkjOPQIBBggqhkjOPQMBBwNCAARCAPgK1pqAcdPqQ1SY8pUOfNb75vqVAXhtqcEpiiYy
+            JYzWr+vFNaZcfrYyzHJL4tvnTWJHGHaXFJv7MZIVMMtPMAoGCCqGSM49BAMCA0gAMEUCIQCI
+            eaQ9AH6F3tzesXA12DuhXMy3P9xbQvTFLMEciD+FxQIgA8iOhLJgKFbKjnNeWSghM8jB3E8M
+            +aTzqL9PT2KlpVc=
+            -----END CERTIFICATE-----
+            """
+        let cert = try X509Certificate(pem: pem)
+        print(cert.publicKey)
+        
+        let keyPem = """
+            -----BEGIN PUBLIC KEY-----
+            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQgD4CtaagHHT6kNUmPKVDnzW++b6lQF4banB
+            KYomMiWM1q/rxTWmXH62MsxyS+Lb501iRxh2lxSb+zGSFTDLTw==
+            -----END PUBLIC KEY-----
+            """
+        let publicKey = try ECPublicKey(pem: keyPem)
+        print(publicKey)
+    }
+    
 }
 
 extension CertificateAuthorityTests {

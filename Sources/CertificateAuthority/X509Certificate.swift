@@ -107,7 +107,7 @@ public extension X509Certificate {
                 .sequence(issuer.asn1),
                 .sequence(validity.asn1),
                 .sequence(subject.asn1),
-                try publicKey.asn1,
+                try publicKey.pkcs8asn1,
                 .contextSpecificConstructed(tag: 3, [.sequence(try extensions.map { try $0.asn1 })])
             ]),
             .sequence([.objectIdentifier("1.2.840.10045.4.3.2")])
