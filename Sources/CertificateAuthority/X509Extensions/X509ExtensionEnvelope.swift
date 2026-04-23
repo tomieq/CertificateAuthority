@@ -60,3 +60,9 @@ struct X509ExtensionEnvelope: X509Extension {
         
     }
 }
+
+extension X509ExtensionEnvelope: CustomStringConvertible {
+    var description: String {
+        "X509ExtensionEnvelope(\(type), isCritical: \(isCritical), body: \(body.hexString))"
+    }
+}

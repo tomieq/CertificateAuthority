@@ -62,3 +62,9 @@ extension ExtendedKeyUsage {
         }
     }
 }
+
+extension ExtendedKeyUsage: CustomStringConvertible {
+    public var description: String {
+        "ExtendedKeyUsage {\n\tCritical: \(isCritical)\n\tPurposes: \(purposes.map { "\($0)" }.joined(separator: ", "))\n}"
+    }
+}

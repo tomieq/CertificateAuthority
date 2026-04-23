@@ -81,6 +81,6 @@ public extension X509Entity {
 
 extension X509Entity: CustomStringConvertible {
     public var description: String {
-        "X509Entity: [\(elements.map { "\($0.key): \($0.value)" }.joined(separator: ", "))]"
+        elements.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
     }
 }

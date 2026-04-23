@@ -83,3 +83,12 @@ extension AuthorityKeyIdentifier {
         }
     }
 }
+
+extension AuthorityKeyIdentifier: CustomStringConvertible {
+    public var description: String {
+        "AuthorityKeyIdentifier {\n\tCritical: \(isCritical)" +
+        "\n\tIssuerKeyID: \(issuerKeyID?.hexString ?? "nil")" +
+        "\n\tIssuer: \(issuer?.description ?? "nil")" +
+        "\n\tIssuerSerialNumber: \(issuerSerialNumber?.hexString ?? "nil")\n}"
+    }
+}

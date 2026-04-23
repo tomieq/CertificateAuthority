@@ -63,3 +63,12 @@ extension BasicConstraints {
         }
     }
 }
+
+extension BasicConstraints: CustomStringConvertible {
+    public var description: String {
+        "Basic Constraints {" +
+        "\n\tCritical: \(isCritical)" +
+        "\n\tCertificate Authority: \(isCertificateAuthority)" +
+        "\n\tMaximum number of subordinate CAs: \(amountOfChildCAs ?? 0)\n}"
+    }
+}

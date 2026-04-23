@@ -6,7 +6,7 @@
 //
 import SwiftyTLV
 
-public protocol X509Extension {
+public protocol X509Extension: CustomStringConvertible {
     init(asn1: ASN1) throws
     var asn1: ASN1 { get throws }
     var type: X509ExtensionType { get }

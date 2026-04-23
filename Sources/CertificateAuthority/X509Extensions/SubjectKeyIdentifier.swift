@@ -45,3 +45,9 @@ extension SubjectKeyIdentifier {
         }
     }
 }
+
+extension SubjectKeyIdentifier: CustomStringConvertible {
+    public var description: String {
+        "SubjectKeyIdentifier {\n\tCritical: \(isCritical)\n\tkeyID: \(keyID.hexString)\n}"
+    }
+}

@@ -41,3 +41,11 @@ public extension X509Validity {
         [.utcTime(from), .utcTime(to)]
     }
 }
+
+extension X509Validity: CustomStringConvertible {
+    public var description: String {
+        "From: \(from), To: \(to)"
+    }
+    
+    
+}

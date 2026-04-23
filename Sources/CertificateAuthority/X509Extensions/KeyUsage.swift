@@ -73,3 +73,9 @@ extension KeyUsage {
         }
     }
 }
+
+extension KeyUsage: CustomStringConvertible {
+    public var description: String {
+        return "KeyUsage {\n\tCritical: \(isCritical)\n\tPurpose: \(purpose.map { "\($0)" }.joined(separator: ", "))\n}"
+    }
+}

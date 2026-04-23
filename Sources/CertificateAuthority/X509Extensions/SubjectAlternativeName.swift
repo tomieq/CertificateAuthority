@@ -27,7 +27,6 @@ public class SubjectAlternativeName: X509Extension {
             guard case .contextSpecificPrimitive(let integer) = $0, case .integer(let data) = integer else { return nil }
             return String(data: data, encoding: .utf8)
         }
-        print(names)
     }
 }
 
@@ -43,5 +42,11 @@ extension SubjectAlternativeName {
                                              isCritical: isCritical,
                                              body: content).asn1
         }
+    }
+}
+
+extension SubjectAlternativeName: CustomStringConvertible {
+    public var description: String {
+        "SubjectAlternativeName {\n\t\(names.joined(separator: "\n\t"))\n}"
     }
 }
